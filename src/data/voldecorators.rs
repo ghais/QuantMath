@@ -30,11 +30,12 @@ impl ConstantExpiryTimeEvolution {
         base_date: DateDayFraction) -> ConstantExpiryTimeEvolution {
 
         ConstantExpiryTimeEvolution { 
-            base_vol: base_vol, vol_time_offset: vol_time_offset,
-            base_date: base_date }
+            base_vol, vol_time_offset,
+            base_date
+        }
     }
 
-    pub fn from_serial<'de>(de: &mut esd::Deserializer<'de>) -> Result<RcVolSurface, esd::Error> {
+    pub fn from_serial(de: &mut dyn esd::Deserializer) -> Result<RcVolSurface, esd::Error> {
         Ok(Qrc::new(Arc::new(ConstantExpiryTimeEvolution::deserialize(de)?)))
     }
 }
@@ -51,7 +52,7 @@ impl VolSurface for ConstantExpiryTimeEvolution {
     fn volatilities(&self,
         date_time: DateDayFraction,
         strikes: &[f64],
-        out: &mut[f64]) -> Result<(f64), qm::Error> {
+        out: &mut[f64]) -> Result<f64, qm::Error> {
 
         let vol_time = self.base_vol.volatilities(date_time, strikes, out)?;
 
@@ -66,12 +67,12 @@ impl VolSurface for ConstantExpiryTimeEvolution {
         self.base_vol.calendar()
     }
 
-    fn forward(&self) -> Option<&Interpolate<Date>> {
-        self.base_vol.forward()
-    }
-
     fn base_date(&self) -> DateDayFraction {
         self.base_date
+    }
+
+    fn forward(&self) -> Option<&dyn Interpolate<Date>> {
+        self.base_vol.forward()
     }
 
     fn div_assumptions(&self) -> DivAssumptions {
@@ -102,11 +103,12 @@ impl RollingExpiryTimeEvolution {
     pub fn new(base_vol: RcVolSurface, vol_time_offset: f64,
         base_date: DateDayFraction) -> RollingExpiryTimeEvolution {
         RollingExpiryTimeEvolution { 
-            base_vol: base_vol, vol_time_offset: vol_time_offset,
-            base_date: base_date }
+            base_vol, vol_time_offset,
+            base_date
+        }
     }
 
-    pub fn from_serial<'de>(de: &mut esd::Deserializer<'de>) -> Result<RcVolSurface, esd::Error> {
+    pub fn from_serial(de: &mut esd::Deserializer) -> Result<RcVolSurface, esd::Error> {
         Ok(Qrc::new(Arc::new(RollingExpiryTimeEvolution::deserialize(de)?)))
     }
 }
@@ -118,7 +120,7 @@ impl VolSurface for RollingExpiryTimeEvolution {
     fn volatilities(&self,
         date_time: DateDayFraction,
         strikes: &[f64],
-        out: &mut[f64]) -> Result<(f64), qm::Error> {
+        out: &mut[f64]) -> Result<f64, qm::Error> {
 
         //print!("RollingExpiryTimeEvolution: date_time={:?} strikes={:?}\n", date_time, strikes);
 
@@ -176,10 +178,10 @@ impl TypeId for ParallelBumpVol {
 
 impl ParallelBumpVol {
     pub fn new(base_vol: RcVolSurface, bump: f64) -> ParallelBumpVol {
-        ParallelBumpVol { base_vol: base_vol, bump: bump }
+        ParallelBumpVol { base_vol, bump }
     }
 
-    pub fn from_serial<'de>(de: &mut esd::Deserializer<'de>) -> Result<RcVolSurface, esd::Error> {
+    pub fn from_serial(de: &mut esd::Deserializer) -> Result<RcVolSurface, esd::Error> {
         Ok(Qrc::new(Arc::new(ParallelBumpVol::deserialize(de)?)))
     }
 }
@@ -189,7 +191,7 @@ impl VolSurface for ParallelBumpVol {
     fn volatilities(&self,
         date_time: DateDayFraction,
         strikes: &[f64],
-        out: &mut[f64]) -> Result<(f64), qm::Error> {
+        out: &mut[f64]) -> Result<f64, qm::Error> {
 
         let vol_time = self.base_vol.volatilities(date_time, strikes, out)?;
 
@@ -205,12 +207,12 @@ impl VolSurface for ParallelBumpVol {
         self.base_vol.calendar()
     }
 
-    fn forward(&self) -> Option<&Interpolate<Date>> {
-        self.base_vol.forward()
-    }
-
     fn base_date(&self) -> DateDayFraction {
         self.base_vol.base_date()
+    }
+
+    fn forward(&self) -> Option<&Interpolate<Date>> {
+        self.base_vol.forward()
     }
 
     fn div_assumptions(&self) -> DivAssumptions {
@@ -242,11 +244,12 @@ impl TimeScaledBumpVol {
     pub fn new(base_vol: RcVolSurface, bump: f64, vol_time_floor: f64)
         -> TimeScaledBumpVol {
 
-        TimeScaledBumpVol { base_vol: base_vol, bump: bump,
-            vol_time_floor: vol_time_floor }
+        TimeScaledBumpVol { base_vol, bump,
+            vol_time_floor
+        }
     }
 
-    pub fn from_serial<'de>(de: &mut esd::Deserializer<'de>) -> Result<RcVolSurface, esd::Error> {
+    pub fn from_serial(de: &mut esd::Deserializer) -> Result<RcVolSurface, esd::Error> {
         Ok(Qrc::new(Arc::new(TimeScaledBumpVol::deserialize(de)?)))
     }
 }
@@ -256,7 +259,7 @@ impl VolSurface for TimeScaledBumpVol {
     fn volatilities(&self,
         date_time: DateDayFraction,
         strikes: &[f64],
-        out: &mut[f64]) -> Result<(f64), qm::Error> {
+        out: &mut[f64]) -> Result<f64, qm::Error> {
 
         let vol_time = self.base_vol.volatilities(date_time, strikes, out)?;
         let scaled_bump = self.bump / vol_time.max(self.vol_time_floor).sqrt();
@@ -300,7 +303,7 @@ impl VolSurface for TimeScaledBumpVol {
 pub struct StickyDeltaBumpVol {
     base_vol: RcVolSurface,
     #[serde(skip)]
-    bumped_forward: Arc<Forward>
+    bumped_forward: Arc<dyn Forward>
 }
 
 impl TypeId for StickyDeltaBumpVol {
@@ -310,8 +313,9 @@ impl TypeId for StickyDeltaBumpVol {
 impl StickyDeltaBumpVol {
     pub fn new(base_vol: RcVolSurface, bumped_forward: Arc<Forward>)
         -> StickyDeltaBumpVol {
-        StickyDeltaBumpVol { base_vol: base_vol, 
-            bumped_forward: bumped_forward }
+        StickyDeltaBumpVol { base_vol,
+            bumped_forward
+        }
     }
 }
 
@@ -326,7 +330,7 @@ impl VolSurface for StickyDeltaBumpVol {
     fn volatilities(&self,
         date_time: DateDayFraction,
         strikes: &[f64],
-        out: &mut[f64]) -> Result<(f64), qm::Error> {
+        out: &mut[f64]) -> Result<f64, qm::Error> {
 
         let n = strikes.len();
         if n == 0 {

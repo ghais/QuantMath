@@ -22,7 +22,6 @@ use core::factories::Qrc;
 use std::sync::Arc;
 use std::fmt::Debug;
 use std::error::Error as stdError;
-use std::f64::NAN;
 use erased_serde as esd;
 use serde as sd;
 use serde_tagged as sdt;
@@ -49,7 +48,7 @@ pub trait VolSurface : esd::Serialize + TypeId + Send + Sync + Debug {
     fn volatilities(&self,
         date_time: DateDayFraction,
         strikes: &[f64],
-        volatilities: &mut[f64]) -> Result<(f64), qm::Error>;
+        volatilities: &mut[f64]) -> Result<f64, qm::Error>;
 
     /// Access to the calendar that defines vol times
     fn calendar(&self) -> &RcCalendar;
@@ -67,8 +66,8 @@ pub trait VolSurface : esd::Serialize + TypeId + Send + Sync + Debug {
     /// Fetch the business day time, which is multiplied by the volatility
     /// squared to give the variance. This is the same as calling volatilities
     /// with no strikes, so that is how we implement it by default.
-    fn vol_time(&self, date_time: DateDayFraction) 
-        -> Result<(f64), qm::Error> {
+    fn vol_time(&self, date_time: DateDayFraction)
+        -> Result<f64, qm::Error> {
 
         let empty_strikes = [0.0; 0];
         let mut empty_vols = [0.0; 0];
@@ -83,7 +82,7 @@ pub trait VolSurface : esd::Serialize + TypeId + Send + Sync + Debug {
         variances: &mut[f64]) -> Result<(), qm::Error> {
 
         let n = strikes.len();
-        assert!(n == variances.len());
+        assert_eq!(n, variances.len());
 
         // fetch the vols into the variances output vector, and get vol_time
         let time = self.volatilities(date_time, strikes, variances)?;
@@ -103,7 +102,7 @@ pub trait VolSurface : esd::Serialize + TypeId + Send + Sync + Debug {
         -> Result<f64, qm::Error> {
 
         let strikes = [strike];
-        let mut variances = [NAN];
+        let mut variances = [f64::NAN];
         self.variances(date_time, &strikes, &mut variances)?;
         Ok(variances[0])
     }
@@ -133,7 +132,7 @@ pub trait VolSurface : esd::Serialize + TypeId + Send + Sync + Debug {
         }
 
         let n = strikes.len();
-        assert!(n == variances.len());
+        assert_eq!(n, variances.len());
 
         if let Some(forward) = self.forward() {
 
@@ -170,7 +169,7 @@ pub trait VolSurface : esd::Serialize + TypeId + Send + Sync + Debug {
             // if there is no forward associated with the vol surface, for
             // example flat vol, just return the forward variances with no
             // smile correction.
-            let mut from_variances = vec!(NAN; n);
+            let mut from_variances = vec!(f64::NAN; n);
             self.variances(from, strikes, &mut from_variances)?;
             self.variances(to, strikes, variances)?;
 
@@ -193,7 +192,7 @@ pub trait VolSurface : esd::Serialize + TypeId + Send + Sync + Debug {
         strike: f64) -> Result<f64, qm::Error> {
 
         let strikes = [strike];
-        let mut variances = [NAN];
+        let mut variances = [f64::NAN];
         self.forward_variances(from, to, &strikes, &mut variances)?;
         Ok(variances[0])
     }
@@ -418,10 +417,10 @@ impl VolSurface for FlatVolSurface {
     fn volatilities(&self,
         date_time: DateDayFraction,
         strikes: &[f64],
-        volatilities: &mut[f64]) -> Result<(f64), qm::Error> {
+        volatilities: &mut[f64]) -> Result<f64, qm::Error> {
 
         let n = strikes.len();
-        assert!(n == volatilities.len());
+        assert_eq!(n, volatilities.len());
         for i in 0..n {
             volatilities[i] = self.vol;
         }
@@ -434,12 +433,12 @@ impl VolSurface for FlatVolSurface {
         &self.calendar
     }
 
-    fn forward(&self) -> Option<&Interpolate<Date>> {
-        None
-    }
-
     fn base_date(&self) -> DateDayFraction {
         self.base_date
+    }
+
+    fn forward(&self) -> Option<&Interpolate<Date>> {
+        None
     }
 
     /// The fact that we are using flat vols for all expiries really implies
@@ -464,13 +463,13 @@ impl FlatVolSurface {
         -> FlatVolSurface {
 
         FlatVolSurface {
-            vol: vol,
-            calendar: calendar,
-            base_date: base_date
+            vol,
+            calendar,
+            base_date
         }
     }
 
-    pub fn from_serial<'de>(de: &mut esd::Deserializer<'de>) -> Result<RcVolSurface, esd::Error> {
+    pub fn from_serial(de: &mut esd::Deserializer) -> Result<RcVolSurface, esd::Error> {
         Ok(Qrc::new(Arc::new(FlatVolSurface::deserialize(de)?)))
     }
 }
@@ -526,11 +525,12 @@ impl<T> VolByProbabilityInput<T> where T: VolSmile + Clone + Debug {
 
         VolByProbabilityInput {
             smiles: smiles.to_vec(),
-            calendar: calendar,
-            base_date: base_date,
-            forward: forward,
-            fixed_divs_after: fixed_divs_after,
-            div_assumptions: div_assumptions }
+            calendar,
+            base_date,
+            forward,
+            fixed_divs_after,
+            div_assumptions
+        }
     }
 }
 
@@ -576,12 +576,12 @@ impl<T: VolSmile + Clone + Sync + Send + Debug> VolSurface for VolByProbability<
         &self.input.calendar
     }
 
-    fn forward(&self) -> Option<&Interpolate<Date>> {
-        Some(&self.input.forward)
-    }
-
     fn base_date(&self) -> DateDayFraction {
         self.input.base_date
+    }
+
+    fn forward(&self) -> Option<&Interpolate<Date>> {
+        Some(&self.input.forward)
     }
 
     fn div_assumptions(&self) -> DivAssumptions {
@@ -650,10 +650,10 @@ impl<T: VolSmile + Clone> VolByProbability<T> {
         }
 
         Ok(VolByProbability {
-            input: input,
-            pillar_forwards: pillar_forwards,
-            pillar_sqrt_variances: pillar_sqrt_variances,
-            pillar_vol_times: pillar_vol_times
+            input,
+            pillar_forwards,
+            pillar_sqrt_variances,
+            pillar_vol_times
         })
     }
 
@@ -699,7 +699,7 @@ impl<T: VolSmile + Clone> VolByProbability<T> {
         let vol_time = self.input.calendar.year_fraction(self.input.base_date, date_time);
 
         let n = strikes.len();
-        assert!(n == out.len());
+        assert_eq!(n, out.len());
         if n == 0 {
             return Ok(vol_time)    // early exit for efficiency
         }
@@ -725,7 +725,7 @@ impl<T: VolSmile + Clone> VolByProbability<T> {
         let left_fwd = self.pillar_forwards[left];
         let left_strikes = to_strikes(&normalised, left_fwd, left_sqrt_var); 
         let mut left_vars = Vec::new();
-        left_vars.resize(n, NAN);
+        left_vars.resize(n, f64::NAN);
         self.pillar_variances(left, left_time, &left_strikes, 
             &mut left_vars)?;
 
@@ -733,7 +733,7 @@ impl<T: VolSmile + Clone> VolByProbability<T> {
         let right_fwd = self.pillar_forwards[right];
         let right_strikes = to_strikes(&normalised, right_fwd, right_sqrt_var); 
         let mut right_vars = Vec::new();
-        right_vars.resize(n, NAN);
+        right_vars.resize(n, f64::NAN);
         self.pillar_variances(right, right_time, &right_strikes, 
             &mut right_vars)?;
 
@@ -797,11 +797,11 @@ impl VolByProbabilityFlatSmile {
     // which are calculated on load. We manually implement the
     // deserialize to first deserialize the inputs, then calculate the
     // extra fields.
-    pub fn from_serial<'de>(de: &mut esd::Deserializer<'de>) -> Result<RcVolSurface, esd::Error> {
+    pub fn from_serial(de: &mut esd::Deserializer) -> Result<RcVolSurface, esd::Error> {
         let input = VolByProbabilityInput::<FlatSmile>::deserialize(de)?;
         match VolByProbability::new(input) {
             Ok(surface) => Ok(Qrc::new(Arc::new(surface))),
-            Err(e) => Err(esd::Error::custom(e.description()))
+            Err(e) => Err(esd::Error::custom(e.to_string()))
         }
     }
 }
@@ -824,7 +824,7 @@ impl VolSurface for VolByProbabilityFlatSmile {
 /// Create a new type for a VolByProbability<CubicSplineSmile> so it can have its own
 /// type id and deserializer.
 #[derive(Debug, Serialize)]
-pub struct VolByProbabilityCubicSplineSmile(VolByProbability<CubicSplineSmile>);
+pub struct VolByProbabilityCubicSplineSmile(VolByProbability<CubicSplineSmile<f64>>);
 
 impl TypeId for VolByProbabilityCubicSplineSmile {
     fn get_type_id(&self) -> &'static str {
@@ -834,7 +834,7 @@ impl TypeId for VolByProbabilityCubicSplineSmile {
 
 impl VolByProbabilityCubicSplineSmile {
 
-    pub fn new(smiles: &[(DateDayFraction, CubicSplineSmile)],
+    pub fn new(smiles: &[(DateDayFraction, CubicSplineSmile<f64>)],
         calendar: RcCalendar,
         base_date: DateDayFraction,
         forward: Linear<Date>,
@@ -851,11 +851,11 @@ impl VolByProbabilityCubicSplineSmile {
     // which are calculated on load. We manually implement the
     // deserialize to first deserialize the inputs, then calculate the
     // extra fields.
-    pub fn from_serial<'de>(de: &mut esd::Deserializer<'de>) -> Result<RcVolSurface, esd::Error> {
-        let input = VolByProbabilityInput::<CubicSplineSmile>::deserialize(de)?;
+    pub fn from_serial(de: &mut esd::Deserializer) -> Result<RcVolSurface, esd::Error> {
+        let input = VolByProbabilityInput::<CubicSplineSmile<f64>>::deserialize(de)?;
         match VolByProbability::new(input) {
             Ok(surface) => Ok(Qrc::new(Arc::new(surface))),
-            Err(e) => Err(esd::Error::custom(e.description()))
+            Err(e) => Err(esd::Error::custom(e.to_string()))
         }
     }
 }
@@ -933,23 +933,35 @@ pub mod tests {
 
         let divs = Linear::new(&[(d, 0.0)], Extrap::Flat, Extrap::Flat).unwrap();
 
-        let mut smiles = Vec::<(DateDayFraction, CubicSplineSmile)>::new();
+        let mut smiles = Vec::<(DateDayFraction, CubicSplineSmile<f64>)>::new();
 
         let points = [(80.0, 0.39), (85.0, 0.3), (90.0, 0.22), (95.0, 0.24)];
-        smiles.push((DateDayFraction::new(base_date + 7, 0.7),
-            CubicSplineSmile::new(&points).unwrap()));
+        let ttm = DateDayFraction::new(base_date + 7, 0.7);
+        smiles.push((ttm,
+                     CubicSplineSmile::new(&points,
+                                           fwd.interpolate(ttm.date()).unwrap(),
+                                           ttm.day_fraction()).unwrap()));
 
         let points = [(70.0, 0.4), (80.0, 0.3), (90.0, 0.23), (100.0, 0.25)];
-        smiles.push((DateDayFraction::new(base_date + 28, 0.7),
-            CubicSplineSmile::new(&points).unwrap()));
+        let ttm = DateDayFraction::new(base_date + 28, 0.7);
+        smiles.push((ttm,
+                     CubicSplineSmile::new(&points,
+                                           fwd.interpolate(ttm.date()).unwrap(),
+                                           ttm.day_fraction()).unwrap()));
 
         let points = [(50.0, 0.43), (70.0, 0.32), (90.0, 0.24), (110.0, 0.27)];
-        smiles.push((DateDayFraction::new(base_date + 112, 0.7),
-            CubicSplineSmile::new(&points).unwrap()));
+        let ttm = DateDayFraction::new(base_date + 112, 0.7);
+        smiles.push((ttm,
+                     CubicSplineSmile::new(&points,
+                                           fwd.interpolate(ttm.date()).unwrap(),
+                                           ttm.day_fraction()).unwrap()));
 
         let points = [(10.0, 0.42), (50.0, 0.31), (90.0, 0.23), (150.0, 0.26)];
-        smiles.push((DateDayFraction::new(base_date + 364, 0.7),
-            CubicSplineSmile::new(&points).unwrap()));
+        let ttm = DateDayFraction::new(base_date + 364, 0.7);
+        smiles.push((ttm,
+                     CubicSplineSmile::new(&points,
+                                           fwd.interpolate(ttm.date()).unwrap(),
+                                           ttm.day_fraction()).unwrap()));
 
         VolByProbabilityCubicSplineSmile::new(&smiles, calendar, base, fwd, divs,
             DivAssumptions::NoCashDivs).unwrap()
@@ -1041,7 +1053,7 @@ pub mod tests {
 
     fn assert_vars(vars: &[f64], expected: &[f64]) {
         let n = expected.len();
-        assert!(vars.len() == n);
+        assert_eq!(vars.len(), n);
         for i in 0..n {
             assert_approx(vars[i], expected[i], 1e-12);
         }

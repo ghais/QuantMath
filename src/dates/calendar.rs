@@ -122,7 +122,7 @@ impl TypeId for EveryDayCalendar {
 impl EveryDayCalendar {
     pub fn new() -> EveryDayCalendar { EveryDayCalendar {} }
 
-    pub fn from_serial<'de>(de: &mut esd::Deserializer<'de>) -> Result<RcCalendar, esd::Error> {
+    pub fn from_serial(de: &mut esd::Deserializer) -> Result<RcCalendar, esd::Error> {
         Ok(Qrc::new(Arc::new(EveryDayCalendar::deserialize(de)?)))
     }
 }
@@ -177,7 +177,7 @@ impl WeekdayCalendar {
         WeekdayCalendar {}
     }
 
-    pub fn from_serial<'de>(de: &mut esd::Deserializer<'de>) -> Result<RcCalendar, esd::Error> {
+    pub fn from_serial(de: &mut esd::Deserializer) -> Result<RcCalendar, esd::Error> {
         Ok(Qrc::new(Arc::new(WeekdayCalendar::deserialize(de)?)))
     }
 }
@@ -606,7 +606,7 @@ impl Calendar for VolatilityCalendar {
 
     fn standard_basis(&self) -> f64 {
         // calculate a basis on the assumption of standard basis for all
-        // business days plus the weight for each standard holiday
+        // business days plus the weight for each standard holiday36=
         self.calendar.standard_basis() * (1.0 - self.holiday_weight)
             + 365.0 * self.holiday_weight
     }

@@ -1,5 +1,5 @@
-use statrs::distribution::Normal;
-use statrs::distribution::Univariate;
+use statrs::distribution::{ContinuousCDF, Normal};
+
 use core::qm;
 
 /// The 1976 reformulation of the Black-Scholes formula, where the price of

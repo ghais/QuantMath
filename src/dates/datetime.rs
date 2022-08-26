@@ -160,9 +160,9 @@ mod tests {
         let wednesday_late = DateTime::new(thursday - 1, TimeOfDay::Close);
         let thursday_early2 = DateTime::new(thursday, TimeOfDay::Open);
 
-        assert!(thursday_early == thursday_early2);
-        assert!(thursday_early != friday_early);
-        assert!(thursday_late != thursday_early);
+        assert_eq!(thursday_early, thursday_early2);
+        assert_ne!(thursday_early, friday_early);
+        assert_ne!(thursday_late, thursday_early);
         assert!(thursday_late < friday_early);
         assert!(thursday_early < thursday_late);
         assert!(wednesday_late < thursday_early);
@@ -180,9 +180,9 @@ mod tests {
         let wednesday_late = DateDayFraction::new(thursday - 1, 0.9);
         let thursday_early2 = DateDayFraction::new(thursday, 0.1);
 
-        assert!(thursday_early == thursday_early2);
-        assert!(thursday_early != friday_early);
-        assert!(thursday_late != thursday_early);
+        assert_eq!(thursday_early, thursday_early2);
+        assert_ne!(thursday_early, friday_early);
+        assert_ne!(thursday_late, thursday_early);
         assert!(thursday_late < friday_early);
         assert!(thursday_early < thursday_late);
         assert!(wednesday_late < thursday_early);

@@ -3,11 +3,11 @@ use std::collections::HashMap;
 use std::ops::Deref;
 use std::sync::Arc;
 use rand;
-use rand::StdRng;
+use rand::prelude::StdRng;
 use nalgebra::linalg::Cholesky;
 use nalgebra::base::DMatrix;
-use statrs::distribution::Distribution;
 use statrs::distribution::Normal;
+use rand::distributions::Distribution;
 use ndarray::Array;
 use ndarray::Array1;
 use ndarray::Array2;
@@ -36,6 +36,7 @@ use core::factories::TypeId;
 use core::factories::Qrc;
 use serde::Deserialize;
 use erased_serde as esd;
+use rand::{SeedableRng, thread_rng};
 
 /// The BlackDiffusionFactory is able to create a BlackDiffusion model, given
 /// the timeline of the product(s) to value, and the market data to value it
@@ -349,7 +350,7 @@ pub fn fetch_correlated_gaussians(
     // Use the standard library random number generator for now. (Look
     // at better generators such as Mersenne Twister, or better still
     // Sobol sequences -- this should be user-settable.)
-    let mut rand = rand::StdRng::new().unwrap();
+    let mut rand = rand::rngs::StdRng::from_rng(thread_rng()).unwrap();
 
     // Use the normal statrs package for turning the random numbers into
     // gaussians for now. Internally it uses Box-Mueller, which is a
