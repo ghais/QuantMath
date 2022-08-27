@@ -188,8 +188,7 @@ pub trait VolSurface : esd::Serialize + TypeId + Send + Sync + Debug {
     /// Convenience method that fetches a single variance. It is generally
     /// much more efficient to use the vector method if you need variances
     /// for multiple strikes.
-    fn forward_variance(&self, from: DateDayFraction, to: DateDayFraction,
-        strike: f64) -> Result<f64, qm::Error> {
+    fn forward_variance(&self, from: DateDayFraction, to: DateDayFraction, strike: f64) -> Result<f64, qm::Error> {
 
         let strikes = [strike];
         let mut variances = [f64::NAN];
@@ -488,14 +487,14 @@ impl FlatVolSurface {
 /// we need to exactly round-trip the variance, even if the time of day
 /// mapping has changed.
 #[derive(Debug)]
-struct VolByProbability<T> where T: VolSmile + Clone + Debug {
+struct VolByProbability<T> where T: VolSmile<f64> + Clone + Debug {
     input: VolByProbabilityInput<T>,
     pillar_forwards: Vec<f64>,
     pillar_sqrt_variances: Vec<f64>,
     pillar_vol_times: Vec<f64>,
 }
 
-impl<T> sd::Serialize for VolByProbability<T> where T : VolSmile + Clone + Debug + sd::Serialize {
+impl<T> sd::Serialize for VolByProbability<T> where T : VolSmile<f64> + Clone + Debug + sd::Serialize {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where S: sd::Serializer {
         self.input.serialize(serializer)
@@ -505,7 +504,7 @@ impl<T> sd::Serialize for VolByProbability<T> where T : VolSmile + Clone + Debug
 // struct containing the user-input fields of VolByProbability so we can
 // auto-generate the deserialization code
 #[derive(Serialize, Deserialize, Debug)]
-struct VolByProbabilityInput<T> where T: VolSmile + Clone + Debug {
+struct VolByProbabilityInput<T> where T: VolSmile<f64> + Clone + Debug {
     smiles: Vec<(DateDayFraction, T)>,
     calendar: RcCalendar,
     base_date: DateDayFraction,
@@ -514,7 +513,7 @@ struct VolByProbabilityInput<T> where T: VolSmile + Clone + Debug {
     div_assumptions: DivAssumptions
 }
 
-impl<T> VolByProbabilityInput<T> where T: VolSmile + Clone + Debug {
+impl<T> VolByProbabilityInput<T> where T: VolSmile<f64> + Clone + Debug {
     fn new(smiles: &[(DateDayFraction, T)],
         calendar: RcCalendar,
         base_date: DateDayFraction,
@@ -534,13 +533,13 @@ impl<T> VolByProbabilityInput<T> where T: VolSmile + Clone + Debug {
     }
 }
 
-impl<T> TypeId for VolByProbability<T> where T: VolSmile + Clone {
+impl<T> TypeId for VolByProbability<T> where T: VolSmile<f64> + Clone {
     fn get_type_id(&self) -> &'static str {
         panic!("TypeId should never be invoked for VolByProbability<T>")
     }
 }
 
-impl<T: VolSmile + Clone + Sync + Send + Debug> VolSurface for VolByProbability<T> {
+impl<T: VolSmile<f64> + Clone + Sync + Send + Debug> VolSurface for VolByProbability<T> {
 
     fn volatilities(&self,
         date_time: DateDayFraction,
@@ -600,7 +599,7 @@ impl<T: VolSmile + Clone + Sync + Send + Debug> VolSurface for VolByProbability<
     }
 }
 
-impl<T: VolSmile + Clone> VolByProbability<T> {
+impl<T: VolSmile<f64> + Clone> VolByProbability<T> {
 
     /// Creates a vol surface that interpolates along lines of constant
     /// probability. It requires a set of vol smiles, which must be in
