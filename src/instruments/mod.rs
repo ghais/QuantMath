@@ -33,7 +33,6 @@ use std::collections::HashMap;
 use std::cell::RefCell;
 use std::cmp::Ordering;
 use std::hash::Hasher;
-use std::f64::NAN;
 use std::fmt::Debug;
 use std::fmt;
 use ndarray::ArrayView2;
@@ -68,7 +67,7 @@ pub trait Instrument : esd::Serialize + TypeId + InstanceId + Sync + Send + Debu
     /// Reports the internal dependencies of this product. Returns an enum
     /// to specify the external dependencies for a spot value on the product
     /// itself.
-    fn dependencies(&self, context: &mut DependencyContext) -> SpotRequirement; 
+    fn dependencies(&self, context: &mut dyn DependencyContext) -> SpotRequirement;
 
     /// Instruments that are margined at the forward level have a value that is
     /// effectively driftless. Examples are equity futures, and options as
@@ -122,12 +121,12 @@ pub trait Instrument : esd::Serialize + TypeId + InstanceId + Sync + Send + Debu
     }
 
     /// Cast from instrument to a priceable. Returns None if not possible.
-    fn as_priceable(&self) -> Option<&Priceable> {
+    fn as_priceable(&self) -> Option<& dyn Priceable> {
         None
     }
 
     /// Cast from instrument to an mc_priceable. Returns None if not possible.
-    fn as_mc_priceable(&self) -> Option<&MonteCarloPriceable> {
+    fn as_mc_priceable(&self) -> Option<& dyn MonteCarloPriceable> {
         None
     }
 }
@@ -423,7 +422,7 @@ pub trait Priceable : Instrument {
     fn price(&self, context: &PricingContext, val_date: DateTime) -> Result<f64, qm::Error> {
 
         let dates = [val_date];
-        let mut prices = [NAN];
+        let mut prices = [f64::NAN];
         self.prices(context, &dates, &mut prices)?;
         Ok(prices[0])
     }

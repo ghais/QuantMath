@@ -110,7 +110,7 @@ impl ZeroRateCurve {
         ZeroRateCurve { base: base_date }
     }
 
-    pub fn from_serial<'de>(de: &mut esd::Deserializer<'de>) -> Result<RcRateCurve, esd::Error> {
+    pub fn from_serial(de: &mut esd::Deserializer) -> Result<RcRateCurve, esd::Error> {
         Ok(Qrc::new(Arc::new(ZeroRateCurve::deserialize(de)?)))
     }
 }
@@ -137,6 +137,10 @@ impl TypeId for RateCurveAct365 {
 }
 
 impl RateCurve for RateCurveAct365 {
+    fn base_date(&self) -> Date {
+        self.base
+    }
+
     fn r_and_t(&self, date: Date) -> Result<(f64, f64), qm::Error> {
 
         // Act/365 basis. Small optimisation if time is zero
@@ -148,10 +152,6 @@ impl RateCurve for RateCurveAct365 {
         let t = (act as f64) / 365.0;
         let r = self.interp.interpolate(date)?;
         Ok((r, t))
-    }
-
-    fn base_date(&self) -> Date {
-        self.base
     }
 }
 

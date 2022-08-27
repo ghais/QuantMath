@@ -15,7 +15,10 @@ extern crate serde_json;
 extern crate lazy_static;
 extern crate void;
 extern crate libc;
-extern crate plotly;
+extern crate finitediff;
+extern crate argmin;
+extern crate num_traits;
+extern crate derive_more;
 
 // listed in dependency order, though this is not essential for compilation
 pub mod core;

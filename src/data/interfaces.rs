@@ -1,3 +1,4 @@
+use core::qm;
 use dates::Date;
 
 /// Low-level interfaces to market data
@@ -20,7 +21,7 @@ pub trait Discount {
     /// its log
     fn df(&self, date: Date) -> Result<f64, qm::Error> {
         let log_df = self.log_df(date)?;
-        log_df.exp()
+        Ok(log_df.exp())
     }
 }
 
