@@ -30,7 +30,7 @@ use serde::Deserialize;
 /// A call option pays (S-K).max(0).
 /// A put option pays (K-S).max(0).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum PutOrCall { Put, Call }
+pub enum PutOrCall { Put = -1, Call = 1 }
 
 /// At expiry, a cash settled option fixes into a cash payment at the payment
 /// date. A physically settled option fixes into a payment of the strike at
@@ -146,8 +146,8 @@ impl VanillaOption {
                 // do depends on how forward valuation will be used. The first real
                 // use case should drive the behaviour.
                 let price = match self.put_or_call {
-                    PutOrCall::Put => black76.put_price(df, f, k, sqrt_var),
-                    PutOrCall::Call => black76.call_price(df, f, k, sqrt_var)
+                    PutOrCall::Put => black76.put_price(df, f, k, sqrt_var, 1.0),
+                    PutOrCall::Call => black76.call_price(df, f, k, sqrt_var, 1.0),
                 };
 
                 // for helpful debug trace, uncomment the below
@@ -398,8 +398,8 @@ impl Instrument for ForwardStartingEuropean {
     fn payoff_currency(&self) -> &Currency { self.vanilla.payoff_currency() }
     fn credit_id(&self) -> &str { self.vanilla.credit_id() }
     fn settlement(&self) -> &RcDateRule { self.vanilla.settlement() }
-    fn as_priceable(&self) -> Option<&Priceable> { Some(self) }
-    fn as_mc_priceable(&self) -> Option<&MonteCarloPriceable> { Some(self) }
+    fn as_priceable(&self) -> Option<& dyn Priceable> { Some(self) }
+    fn as_mc_priceable(&self) -> Option<& dyn MonteCarloPriceable> { Some(self) }
 
     fn dependencies(&self, context: &mut DependencyContext)
         -> SpotRequirement {
