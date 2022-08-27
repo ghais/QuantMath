@@ -18,8 +18,16 @@ serde_tagged = "0.2.0"
 lazy_static = "1.0"
 void = "1"
 libc = "0.2"
-plotly = { version = "0.7.0" }
+modcholesky = "0.1.4"
+argmin = "0.6.0"
+finitediff = "0.1.4"
+num-traits = "0.2"
+derive_more = "0.99.0"
+
 [lib]
 name = "quantmath"
 path = "src/lib.rs"
 crate-type = ["lib", "cdylib"]
+
+[build-dependencies]
+cc = "1.0.73"
