@@ -215,13 +215,13 @@ impl BlackDiffusion {
         if let Some(asset) = self.key.get(&id_string) {
 
             // save the old path then replace it
-            let path = self.paths.subview_mut(Axis(2), *asset);
+            let path = self.paths.index_axis_mut(Axis(2), *asset);
             if let Some(s) = saved_paths {
                 s.insert(*asset, path.to_owned());
             }
             fetch_path(self.instruments[*asset].deref(), 
                 self.context.as_pricing_context(), &self.observations,
-                self.correlated_gaussians.subview(Axis(2), *asset),
+                self.correlated_gaussians.index_axis(Axis(2), *asset),
                 &self.substepping,
                 path)?;
 
@@ -493,7 +493,7 @@ impl MonteCarloContext for BlackDiffusion {
         let id = instrument.id().to_string();
         let asset = self.key.get(&id).ok_or_else(|| qm::Error::new(
             &format!("BlackDiffusion does not know about '{}'", id)))?;
-        Ok(self.paths.subview(Axis(2), *asset))
+        Ok(self.paths.index_axis(Axis(2), *asset))
     }
 
     fn evaluate_flows(&self, quantities: ArrayView2<f64>)
@@ -625,7 +625,7 @@ impl Bumpable for BlackDiffusion {
 
             // now restore any cached paths
             for (asset, paths) in saved.paths.iter() {
-                let mut dest = self.paths.subview_mut(Axis(2), *asset);
+                let mut dest = self.paths.index_axis_mut(Axis(2), *asset);
                 dest.assign(paths);
             }
             Ok(())

@@ -515,7 +515,7 @@ impl MonteCarloPriceable for SpotStartingEuropean {
         let n_paths = shape[0];
         let n_obs = shape[1];
         assert_eq!(n_obs, 1);
-        let ref path_column = paths.subview(Axis(1), 0);
+        let ref path_column = paths.index_axis(Axis(1), 0);
 
         // Create an array to hold the cashflows (one per path). Note that
         // there is no need to distinguish cash and physically settled options,
@@ -529,7 +529,7 @@ impl MonteCarloPriceable for SpotStartingEuropean {
 
         // Calculate the quantity of each flow for each path
         {
-            let ref mut flow_column = quantities.subview_mut(Axis(1), 0);
+            let ref mut flow_column = quantities.index_axis_mut(Axis(1), 0);
             for (spot, flow) in path_column.iter().zip(flow_column.iter_mut()) {
                 let intrinsic = (sign * (spot - strike)).max(0.0);
                 *flow = intrinsic;
@@ -594,7 +594,7 @@ impl MonteCarloPriceable for ForwardStartingEuropean {
 
         // Calculate the quantity of each flow for each path
         {
-            let ref mut flow_column = quantities.subview_mut(Axis(1), 0);
+            let ref mut flow_column = quantities.index_axis_mut(Axis(1), 0);
             for (path, flow) in paths.axis_iter(Axis(0)).zip(flow_column.iter_mut()) {
                 let strike = strike_fraction * path[0];
                 let spot = path[1];
