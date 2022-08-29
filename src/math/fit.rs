@@ -66,7 +66,6 @@ impl <'a> SviFit<'a> {
         let m = Dynamic::from_usize(self.prices.len());
         let n = Dim::from_usize(1);
         Some(OVector::<f64, Dynamic>::from_iterator_generic(m, n, self.prices.iter().map(|(q, x, p)| {
-            let v = self.svi.volatility(*x).unwrap();
             let price = b76_price(&self.svi, self.df, self.fwd, *x, self.ttm, *q);
             return *p - price;
         })))
