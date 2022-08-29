@@ -174,7 +174,7 @@ pub mod tests {
     use math::numerics::approx_eq;
     use math::interpolation::Extrap;
     use data::forward::Forward;
-    use data::volsurface::RcVolSurface;
+    use data::volatility::volsurface::RcVolSurface;
     use data::curves::RateCurveAct365;
     use data::curves::RcRateCurve;
     use dates::Date;

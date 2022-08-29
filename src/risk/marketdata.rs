@@ -404,8 +404,8 @@ pub mod tests {
     use data::divstream::DividendStream;
     use data::divstream::Dividend;
     use data::curves::RateCurveAct365;
-    use data::volsurface::RcVolSurface;
-    use data::volsurface::FlatVolSurface;
+    use data::volatility::volsurface::RcVolSurface;
+    use data::volatility::volsurface::FlatVolSurface;
     use data::bumpspot::BumpSpot;
     use data::bumpdivs::BumpDivs;
     use data::bumpvol::BumpVol;

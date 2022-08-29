@@ -617,11 +617,11 @@ mod tests {
     use math::interpolation::Extrap;
     use math::interpolation::CubicSpline;
     use data::forward::Forward;
-    use data::volsurface::RcVolSurface;
+    use data::volatility::volsurface::RcVolSurface;
     use data::curves::RateCurveAct365;
     use data::curves::RcRateCurve;
     use data::forward::InterpolatedForward;
-    use data::volsurface::FlatVolSurface;
+    use data::volatility::volsurface::FlatVolSurface;
     use dates::calendar::WeekdayCalendar;
     use dates::calendar::RcCalendar;
     use dates::Date;

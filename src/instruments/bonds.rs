@@ -149,7 +149,7 @@ mod tests {
     use data::curves::RateCurveAct365;
     use data::curves::RcRateCurve;
     use data::forward::Forward;
-    use data::volsurface::RcVolSurface;
+    use data::volatility::volsurface::RcVolSurface;
     use dates::calendar::WeekdayCalendar;
     use dates::calendar::RcCalendar;
     use dates::rules::BusinessDays;

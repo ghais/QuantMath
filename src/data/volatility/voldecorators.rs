@@ -395,9 +395,9 @@ mod tests {
     use math::numerics::approx_eq;
     use dates::Date;
     use data::forward::InterpolatedForward;
-    use data::volsurface::VolTimeDynamics;
-    use data::volsurface::tests::sample_vol_surface;
-    use data::volsurface::RcVolSurface;
+    use data::volatility::volsurface::VolTimeDynamics;
+    use data::volatility::volsurface::tests::sample_vol_surface;
+    use data::volatility::volsurface::RcVolSurface;
     use math::interpolation::Extrap;
     use math::interpolation::Linear;
 

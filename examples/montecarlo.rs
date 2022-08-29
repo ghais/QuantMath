@@ -15,7 +15,7 @@ use qm::dates::{
 use qm::data::{
     divstream::{Dividend, DividendStream, RcDividendStream},
     curves::{RateCurveAct365, RcRateCurve},
-    volsurface::{FlatVolSurface, RcVolSurface, VolSurface},
+    volatility::volsurface::{FlatVolSurface, RcVolSurface, VolSurface},
     fixings::{FixingTable, RcFixingTable},
     bump::Bump,
     bumpspot::BumpSpot,
