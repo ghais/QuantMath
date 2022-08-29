@@ -39,10 +39,10 @@ impl Black76 {
         let (d_plus, d_minus) = d_plus_minus(log_moneyness, sqrt_variance);
         return match q {
             PutOrCall::Put => {
-                df * (self.cdf(d_plus) * fwd - self.cdf(d_minus) * k)
+                df * (self.cdf(-d_minus) * k - self.cdf(-d_plus) * fwd)
             }
             PutOrCall::Call => {
-                df * (self.cdf(-d_minus) * k - self.cdf(-d_plus) * fwd)
+                df * (self.cdf(d_plus) * fwd - self.cdf(d_minus) * k)
             }
         }
     }
