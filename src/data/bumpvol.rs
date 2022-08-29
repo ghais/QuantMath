@@ -1,9 +1,9 @@
 use std::sync::Arc;
 use std::f64::NAN;
-use data::volsurface::RcVolSurface;
-use data::volsurface::FlatVolSurface;
-use data::voldecorators::TimeScaledBumpVol;
-use data::voldecorators::ParallelBumpVol;
+use data::volatility::volsurface::RcVolSurface;
+use data::volatility::volsurface::FlatVolSurface;
+use data::volatility::voldecorators::TimeScaledBumpVol;
+use data::volatility::voldecorators::ParallelBumpVol;
 use data::bump::Bumper;
 
 /// Bump that defines all the supported bumps and risk transformations of a

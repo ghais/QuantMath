@@ -19,7 +19,7 @@ extern crate finitediff;
 extern crate argmin;
 extern crate num_traits;
 extern crate derive_more;
-
+extern crate levenberg_marquardt;
 // listed in dependency order, though this is not essential for compilation
 pub mod core;
 pub mod math;

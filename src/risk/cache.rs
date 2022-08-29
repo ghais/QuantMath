@@ -2,7 +2,7 @@ use std::sync::Arc;
 use std::collections::HashMap;
 use std::any::Any;
 use std::ops::Deref;
-use data::volsurface::RcVolSurface;
+use data::volatility::volsurface::RcVolSurface;
 use data::forward::Forward;
 use data::curves::RcRateCurve;
 use data::bump::Bump;

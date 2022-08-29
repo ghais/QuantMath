@@ -6,7 +6,7 @@ use core::qm;
 use dates::Date;
 use data::curves::RcRateCurve;
 use data::divstream::RcDividendStream;
-use data::volsurface::RcVolSurface;
+use data::volatility::volsurface::RcVolSurface;
 use data::forward::Forward;
 use data::forward::EquityForward;
 use data::bump::Bump;

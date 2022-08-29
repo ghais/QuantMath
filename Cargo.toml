@@ -8,7 +8,8 @@ description = "A library of quantitative maths and a framework for quantitative 
 [dependencies]
 statrs = "0.15.0"
 ndarray = "0.15.6"
-nalgebra = "0.31.1"
+nalgebra = { version = "0.30.1" }
+
 rand = "0.8.4"
 serde = "1.0"
 serde_derive = "1.0"
@@ -19,10 +20,11 @@ lazy_static = "1.0"
 void = "1"
 libc = "0.2"
 modcholesky = "0.1.4"
-argmin = "0.6.0"
+argmin = "0.7.0"
 finitediff = "0.1.4"
 num-traits = "0.2"
 derive_more = "0.99.0"
+levenberg-marquardt = "0.12.0"
 
 [lib]
 name = "quantmath"

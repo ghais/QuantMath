@@ -1,8 +1,8 @@
 use std::sync::Arc;
-use data::volsurface::VolSurface;
-use data::volsurface::RcVolSurface;
+use data::volatility::volsurface::VolSurface;
+use data::volatility::volsurface::RcVolSurface;
 use data::forward::Forward;
-use data::volsurface::DivAssumptions;
+use data::volatility::volsurface::DivAssumptions;
 use dates::datetime::DateDayFraction;
 use dates::calendar::RcCalendar;
 use dates::Date;

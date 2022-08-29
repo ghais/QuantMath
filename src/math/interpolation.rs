@@ -249,7 +249,7 @@ impl<T : Interpolable<T> + Copy> Linear<T> {
 /// Cubic spline interpolation is continuous up to the second derivative.
 /// It builds sections of cubic curves, based on matching first derivatives
 /// at the pillar points. It is therefore generally smoother than a simple
-/// polynomial fit.
+/// polynomial fit.rs.
 ///
 /// We preprocess the points in the constructor to find the second derivative
 /// at each of the pillar points.

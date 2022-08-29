@@ -1,15 +1,15 @@
 use dates::datetime::DateDayFraction;
 use dates::calendar::RcCalendar;
 use dates::Date;
-use data::volsmile::VolSmile;
-use data::volsmile::FlatSmile;
-use data::volsmile::CubicSplineSmile;
+use data::volatility::volsmile::VolSmile;
+use data::volatility::volsmile::FlatSmile;
+use data::volatility::volsmile::CubicSplineSmile;
 use data::forward::Forward;
-use data::voldecorators::ConstantExpiryTimeEvolution;
-use data::voldecorators::RollingExpiryTimeEvolution;
-use data::voldecorators::ParallelBumpVol;
-use data::voldecorators::TimeScaledBumpVol;
-use data::voldecorators::StickyDeltaBumpVol;
+use data::volatility::voldecorators::ConstantExpiryTimeEvolution;
+use data::volatility::voldecorators::RollingExpiryTimeEvolution;
+use data::volatility::voldecorators::ParallelBumpVol;
+use data::volatility::voldecorators::TimeScaledBumpVol;
+use data::volatility::voldecorators::StickyDeltaBumpVol;
 use math::interpolation::lerp;
 use math::interpolation::Interpolable;
 use math::interpolation::Interpolate;
@@ -901,7 +901,7 @@ pub mod tests {
     use math::numerics::approx_eq;
     use dates::Date;
     use dates::calendar::WeekdayCalendar;
-    use data::volsmile::CubicSplineSmile;
+    use data::volatility::volsmile::CubicSplineSmile;
     use math::interpolation::Extrap;
     use serde_json;
 
