@@ -6,7 +6,7 @@ license = "MIT"
 description = "A library of quantitative maths and a framework for quantitative valuation and risk"
 
 [dependencies]
-statrs = "0.15.0"
+statrs = "0.16.0"
 ndarray = "0.15.6"
 nalgebra = { version = "0.30.1" }
 
