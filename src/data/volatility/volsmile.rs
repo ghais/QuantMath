@@ -2,9 +2,9 @@ use core::qm;
 use core::qm::Error;
 use data::volatility::strike::{LogRelStrike, Strike};
 use instruments::options::PutOrCall;
+use math::interpolation::CubicSpline;
 use math::interpolation::Extrap;
 use math::interpolation::Interpolate;
-use math::interpolation::{CubicSpline};
 use math::optionpricing::{Bachelier, Black76};
 use serde::Serialize;
 use std::fmt::Debug;
@@ -116,7 +116,51 @@ impl VolSmile<LogRelStrike> for RSVI {
     }
 }
 
-impl VolSmile<f64> for RSVI {
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LSSVI {
+    t: f64,
+    fwd: f64,
+    theta: f64,
+    phi: f64,
+    rho: f64,
+}
+
+impl LSSVI {
+    pub fn new(t: f64, fwd: f64, theta: f64, phi: f64, rho: f64) -> LSSVI {
+        LSSVI {
+            t,
+            fwd,
+            theta,
+            phi,
+            rho,
+        }
+    }
+}
+
+impl VolSmile<LogRelStrike> for LSSVI {
+    fn volatilities(
+        &self,
+        strikes: &[LogRelStrike],
+        volatilities: &mut [f64],
+    ) -> Result<(), Error> {
+        let mut i = 0;
+        for strike in strikes {
+            let x = strike.x;
+            let v = 0.5
+                * self.theta
+                * (1.0
+                    + self.rho * self.phi * x
+                    + f64::sqrt(
+                        1.0 + 2.0 * self.rho * self.phi * x + self.phi.powi(2) * x.powi(2),
+                    ));
+            volatilities[i] = (v / self.t).sqrt();
+            i += 1;
+        }
+        Ok(())
+    }
+}
+
+impl VolSmile<f64> for LSSVI {
     fn volatilities(&self, strikes: &[f64], volatilities: &mut [f64]) -> Result<(), Error> {
         let xs: Vec<LogRelStrike> = strikes
             .iter()
