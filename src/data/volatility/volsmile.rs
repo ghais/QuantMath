@@ -170,6 +170,70 @@ impl VolSmile<f64> for LSSVI {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SVIJW {
+    /// Time to expiry
+    t: f64,
+    /// Forward
+    fwd: f64,
+    /// ATM Variance
+    v: f64,
+    /// ATM Skew
+    phi: f64,
+    /// The slope of the left (put) wing
+    p: f64,
+    /// the slope of the right (call) wing
+    c: f64,
+    /// The minimum iplied variance
+    vv: f64,
+}
+
+impl SVIJW {
+    pub fn new(t: f64, fwd: f64, v: f64, phi: f64, p: f64, c: f64, vv: f64) -> SVIJW {
+        SVIJW {
+            t,
+            fwd,
+            v,
+            phi,
+            p,
+            c,
+            vv,
+        }
+    }
+}
+
+impl VolSmile<LogRelStrike> for SVIJW {
+    fn volatilities(
+        &self,
+        strikes: &[LogRelStrike],
+        volatilities: &mut [f64],
+    ) -> Result<(), Error> {
+        let w = self.v * self.t;
+        let ws = w.sqrt();
+        let b = ws * 0.5 * (self.c + self.p);
+        let rho = 1.0 - 2.0 * self.p / (self.c + self.p);
+        let beta = rho - 2. * self.phi * ws / b;
+        let alpha = beta.signum() * f64::sqrt(1.0 / (beta.powi(2)) - 1.0);
+        let m = (self.v - self.vv) * self.t
+            / (b * (-rho + alpha.signum() * f64::sqrt(1.0 + alpha * alpha)
+                - alpha * f64::sqrt(1.0 - rho * rho)));
+        let sigma = alpha * m;
+        let a = self.vv * self.t - b * sigma * f64::sqrt(1.0 - rho * rho);
+        let rsvi = RSVI::new(self.t, self.fwd, a, b, rho, m, sigma);
+        rsvi.volatilities(strikes, volatilities)
+    }
+}
+
+impl VolSmile<f64> for SVIJW {
+    fn volatilities(&self, strikes: &[f64], volatilities: &mut [f64]) -> Result<(), Error> {
+        let xs: Vec<LogRelStrike> = strikes
+            .iter()
+            .map(|k| Strike::cash_to_strike_space(*k, self.fwd, self.t))
+            .collect();
+        self.volatilities(&xs, volatilities)
+    }
+}
+
 /// A flat smile, where the vol is the same for all strikes. (It may be
 /// different at other dates.)
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -280,5 +344,14 @@ mod tests {
                 expected[i]
             );
         }
+    }
+
+    #[test]
+    fn test_svijw() {
+        // 0.04	-0.05	0.5	0.49	0.038
+        let svijw = SVIJW::new(1.0, 100.0, 0.04, -0.05, 0.5, 0.49, 0.038);
+        let strike = 60.0;
+        let vol = svijw.volatility(strike).unwrap();
+        assert_eq!(0.24733878039241802, vol);
     }
 }
