@@ -8,6 +8,7 @@ use math::interpolation::Interpolate;
 use math::optionpricing::{Bachelier, Black76};
 use serde::Serialize;
 use std::fmt::Debug;
+use std::ops::Neg;
 
 /// A VolSmile is a curve of volatilities by strike, all for a specific date.
 pub trait VolSmile<X: Strike>: Serialize + Clone + Debug {
@@ -64,12 +65,12 @@ pub fn bachelier_price<X: Strike>(
     return bachelier.price(df, fwd, k, ttm, v.unwrap(), q);
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct RSVI {
     pub t: f64,
     pub fwd: f64,
-    pub alpha: f64,
-    pub beta: f64,
+    pub a: f64,
+    pub b: f64,
     pub rho: f64,
     pub m: f64,
     pub sigma: f64,
@@ -80,19 +81,37 @@ impl RSVI {
         RSVI {
             t,
             fwd,
-            alpha,
-            beta,
+            a: alpha,
+            b: beta,
             rho,
             m,
             sigma,
         }
     }
 
+    pub fn to_svijw(&self) -> SVIJW {
+        let v = (self.a
+            + self.b
+                * (self.rho.neg() * self.m + f64::sqrt(self.m * self.m + self.sigma * self.sigma)))
+            / self.t;
+        let w = v * self.t;
+        let phi = (1.0 / w.sqrt())
+            * 0.5
+            * self.b
+            * ((self.m / f64::sqrt(self.m * self.m + self.sigma * self.sigma)).neg() + self.rho);
+        let p = (1.0 / w.sqrt()) * self.b * (1.0 - self.rho);
+        let c = (1.0 / w.sqrt()) * self.b * (1.0 + self.rho);
+        let vv =
+            (1.0 / self.t) * (self.a + self.b * self.sigma * f64::sqrt(1.0 - self.rho * self.rho));
+
+        return SVIJW::new(self.t, self.fwd, v, phi, p, c, vv);
+    }
+
     pub fn is_valid(&self) -> bool {
-        return self.beta >= 0.0
+        return self.b >= 0.0
             && self.rho.abs() < 1.0
             && self.sigma > 0.0
-            && self.sigma + self.beta * self.sigma * (1.0 - self.rho * self.rho).sqrt() >= 0.0;
+            && self.sigma + self.b * self.sigma * (1.0 - self.rho * self.rho).sqrt() >= 0.0;
     }
 }
 
@@ -105,8 +124,8 @@ impl VolSmile<LogRelStrike> for RSVI {
         let mut i = 0;
         for strike in strikes {
             let x = strike.x;
-            let v = self.alpha
-                + self.beta
+            let v = self.a
+                + self.b
                     * (self.rho * (x - self.m)
                         + ((x - self.m).powi(2) + self.sigma.powi(2)).sqrt());
             volatilities[i] = (v / self.t).sqrt();
@@ -116,7 +135,17 @@ impl VolSmile<LogRelStrike> for RSVI {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+impl VolSmile<f64> for RSVI {
+    fn volatilities(&self, strikes: &[f64], volatilities: &mut [f64]) -> Result<(), Error> {
+        let xs: Vec<LogRelStrike> = strikes
+            .iter()
+            .map(|k| Strike::cash_to_strike_space(*k, self.fwd, self.t))
+            .collect();
+        self.volatilities(&xs, volatilities)
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct LSSVI {
     t: f64,
     fwd: f64,
@@ -170,7 +199,7 @@ impl VolSmile<f64> for LSSVI {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct SVIJW {
     /// Time to expiry
     t: f64,
@@ -199,6 +228,30 @@ impl SVIJW {
             c,
             vv,
         }
+    }
+
+    pub fn to_rsvi(&self) -> RSVI {
+        let w = self.v * self.t;
+        let ws = w.sqrt();
+
+        let b = ws * 0.5 * (self.c + self.p);
+        let rho = 1.0 - self.p * ws / b;
+
+        let mut beta = rho - 2.0 * self.phi * w.sqrt() / b;
+        if beta == 0.0 {
+            beta = 0.001;
+        }
+
+        let alpha = beta.signum() * f64::sqrt(1.0 / beta.powi(2) - 1.0);
+
+        let m = (self.v - self.vv) * self.t
+            / (b * (-rho + alpha.signum() * f64::sqrt(1.0 + alpha.powi(2))
+                - alpha * f64::sqrt(1.0 - rho.powi(2))));
+
+        let sigma = alpha * m;
+
+        let a = self.vv * self.t - b * sigma * f64::sqrt(1.0 - rho.powi(2));
+        return RSVI::new(self.t, self.fwd, a, b, rho, m, sigma);
     }
 }
 
@@ -353,5 +406,14 @@ mod tests {
         let strike = 60.0;
         let vol = svijw.volatility(strike).unwrap();
         assert_eq!(0.24733878039241802, vol);
+    }
+
+    #[test]
+    fn test_svijw_to_raw() {
+        let svijw = SVIJW::new(1.0, 100.0, 0.04, -0.05, 0.5, 0.49, 0.038);
+        let strike = 60.0;
+        let rsvi = svijw.to_rsvi();
+        let svijw2 = rsvi.to_svijw();
+        assert_eq!(svijw, svijw2);
     }
 }

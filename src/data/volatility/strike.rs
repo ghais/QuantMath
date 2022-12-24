@@ -1,8 +1,7 @@
-
-use math::interpolation::{Interpolable};
-use std::cmp::Ordering;
 use derive_more::{Add, Display, From, Into, Mul, Sub};
-use serde::Serialize;
+use math::interpolation::Interpolable;
+use serde::{Deserialize, Serialize};
+use std::cmp::Ordering;
 use std::fmt::Debug;
 use std::ops::{Add, Sub};
 
@@ -25,9 +24,13 @@ pub trait Strike:
     fn cash_to_strike_space(k: f64, fwd: f64, ttm: f64) -> Self;
 }
 
-
-#[derive(Copy, Clone, Serialize, Debug, Add, Sub, Display)]
+#[derive(Copy, Clone, Serialize, Deserialize, Debug, Add, Sub, Display)]
 pub struct LogRelStrike {
+    pub x: f64,
+}
+
+#[derive(Copy, Clone, Serialize, Deserialize, Debug, Add, Sub, Display)]
+pub struct AbsRelStrike {
     pub x: f64,
 }
 
@@ -86,5 +89,43 @@ impl Strike for f64 {
 
     fn cash_to_strike_space(k: f64, _: f64, _: f64) -> Self {
         k
+    }
+}
+
+impl Interpolable<AbsRelStrike> for AbsRelStrike {
+    fn interp_diff(&self, other: AbsRelStrike) -> f64 {
+        self.x - other.x
+    }
+
+    fn interp_cmp(&self, other: AbsRelStrike) -> Ordering {
+        self.x.partial_cmp(&other.x).unwrap()
+    }
+}
+
+impl Add<f64> for AbsRelStrike {
+    type Output = AbsRelStrike;
+
+    fn add(self, rhs: f64) -> Self::Output {
+        AbsRelStrike { x: self.x + rhs }
+    }
+}
+
+impl Sub<f64> for AbsRelStrike {
+    type Output = AbsRelStrike;
+
+    fn sub(self, rhs: f64) -> Self::Output {
+        AbsRelStrike { x: self.x - rhs }
+    }
+}
+
+impl From<f64> for AbsRelStrike {
+    fn from(x: f64) -> Self {
+        AbsRelStrike { x }
+    }
+}
+
+impl Into<f64> for AbsRelStrike {
+    fn into(self) -> f64 {
+        self.x
     }
 }
