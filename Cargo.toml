@@ -9,7 +9,7 @@ description = "A library of quantitative maths and a framework for quantitative 
 statrs = "0.16.0"
 ndarray = "0.15.6"
 nalgebra = { version = "0.30.1" }
-
+chrono = {version = "^0", features = ["serde"]}
 rand = "0.8.4"
 serde = "1.0"
 serde_derive = "1.0"
