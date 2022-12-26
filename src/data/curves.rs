@@ -162,11 +162,11 @@ impl RateCurve for ConstRateCurve {
     fn r_and_t(&self, date: Date) -> Result<(Rate, YearFraction), Error> {
         // Act/365 basis. Small optimisation if time is zero
         let act = date - self.base;
-        if act == 0 {
+        if act.is_zero() {
             return Ok((0.0, 0.0));
         }
 
-        let t = (act as f64) / 365.0;
+        let t = (act.num_days() as f64) / 365.0;
         Ok((self.rate, t))
     }
 }
@@ -214,11 +214,11 @@ impl RateCurve for RateCurveAct365 {
     fn r_and_t(&self, date: Date) -> Result<(f64, f64), Error> {
         // Act/365 basis. Small optimisation if time is zero
         let act = date - self.base;
-        if act == 0 {
+        if act.is_zero() {
             return Ok((0.0, 0.0));
         }
 
-        let t = (act as f64) / 365.0;
+        let t = (act.num_days() as f64) / 365.0;
         let r = self.interp.interpolate(date)?;
         Ok((r, t))
     }
@@ -373,6 +373,7 @@ impl RelativeBump {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use chrono::Days;
     use math::numerics::approx_eq;
     use serde_json;
 
@@ -381,7 +382,7 @@ mod tests {
         let base = Date::from_ymd(2017, 01, 01);
         let c = ZeroRateCurve::new(base);
 
-        assert_rt(c.rt(base + 7), 0.0);
+        assert_rt(c.rt(base + Days::new(7)), 0.0);
     }
 
     #[test]
@@ -390,18 +391,18 @@ mod tests {
         let d = base;
         let points = [
             (d, 0.05),
-            (d + 14, 0.08),
-            (d + 56, 0.09),
-            (d + 112, 0.085),
-            (d + 224, 0.082),
+            (d + Days::new(14), 0.08),
+            (d + Days::new(56), 0.09),
+            (d + Days::new(112), 0.085),
+            (d + Days::new(224), 0.082),
         ];
         let c = RateCurveAct365::new(base, &points, Extrap::Flat, Extrap::Flat).unwrap();
 
-        assert_rt(c.rt(d + 0), 0.05 * 0.0 / 365.0);
-        assert_rt(c.rt(d + 7), 0.065 * 7.0 / 365.0);
-        assert_rt(c.rt(d + 14), 0.08 * 14.0 / 365.0);
-        assert_rt(c.rt(d + 224), 0.082 * 224.0 / 365.0);
-        assert_rt(c.rt(d + 365), 0.082 * 365.0 / 365.0);
+        assert_rt(c.rt(d + Days::new(0)), 0.05 * 0.0 / 365.0);
+        assert_rt(c.rt(d + Days::new(7)), 0.065 * 7.0 / 365.0);
+        assert_rt(c.rt(d + Days::new(14)), 0.08 * 14.0 / 365.0);
+        assert_rt(c.rt(d + Days::new(224)), 0.082 * 224.0 / 365.0);
+        assert_rt(c.rt(d + Days::new(365)), 0.082 * 365.0 / 365.0);
     }
 
     #[test]
@@ -409,7 +410,7 @@ mod tests {
         // a rate curve with some points
         let base = Date::from_ymd(2017, 01, 01);
         let d = base;
-        let points = [(d, 0.05), (d + 14, 0.08)];
+        let points = [(d, 0.05), (d + Days::new(14), 0.08)];
         let curve = RateCurveAct365::new(base, &points, Extrap::Flat, Extrap::Flat).unwrap();
 
         // Convert the curve to a JSON string.
@@ -423,9 +424,9 @@ mod tests {
         let deserialized: RateCurveAct365 = serde_json::from_str(&serialized).unwrap();
 
         // make sure it matches at the pillars and beyond
-        assert_rt(deserialized.rt(d + 0), 0.05 * 0.0 / 365.0);
-        assert_rt(deserialized.rt(d + 14), 0.08 * 14.0 / 365.0);
-        assert_rt(deserialized.rt(d + 15), 0.08 * 15.0 / 365.0);
+        assert_rt(deserialized.rt(d + Days::new(0)), 0.05 * 0.0 / 365.0);
+        assert_rt(deserialized.rt(d + Days::new(14)), 0.08 * 14.0 / 365.0);
+        assert_rt(deserialized.rt(d + Days::new(15)), 0.08 * 15.0 / 365.0);
     }
 
     #[test]
@@ -433,7 +434,7 @@ mod tests {
         // a rate curve with some points
         let base = Date::from_ymd(2017, 01, 01);
         let d = base;
-        let points = [(d, 0.05), (d + 14, 0.08)];
+        let points = [(d, 0.05), (d + Days::new(14), 0.08)];
         let curve = RcRateCurve::new(Arc::new(
             RateCurveAct365::new(base, &points, Extrap::Flat, Extrap::Flat).unwrap(),
         ));
@@ -451,9 +452,15 @@ mod tests {
         let deserialized: RcRateCurve = serde_json::from_str(&serialized).unwrap();
 
         // make sure it matches at the pillars and beyond
-        assert_rt(deserialized.rt(d + 0), 0.05 * 0.01 * 0.0 / 365.0);
-        assert_rt(deserialized.rt(d + 14), 0.08 * 0.01 * 14.0 / 365.0);
-        assert_rt(deserialized.rt(d + 15), 0.08 * 0.01 * 15.0 / 365.0);
+        assert_rt(deserialized.rt(d + Days::new(0)), 0.05 * 0.01 * 0.0 / 365.0);
+        assert_rt(
+            deserialized.rt(d + Days::new(14)),
+            0.08 * 0.01 * 14.0 / 365.0,
+        );
+        assert_rt(
+            deserialized.rt(d + Days::new(15)),
+            0.08 * 0.01 * 15.0 / 365.0,
+        );
     }
 
     fn assert_rt(rt: Result<f64, Error>, v: f64) {

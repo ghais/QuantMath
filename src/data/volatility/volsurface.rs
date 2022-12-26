@@ -1089,6 +1089,7 @@ pub fn to_strikes(normalised: &[f64], forward: f64, sqrt_variance: f64) -> Vec<f
 #[cfg(test)]
 pub mod tests {
     use super::*;
+    use chrono::Days;
     use data::volatility::volsmile::CubicSplineSmile;
     use dates::calendar::WeekdayCalendar;
     use dates::Date;
@@ -1101,7 +1102,7 @@ pub mod tests {
         let calendar = RcCalendar::new(Arc::new(WeekdayCalendar()));
         let base_date = Date::from_ymd(2012, 05, 25);
         let base = DateDayFraction::new(base_date, 0.2);
-        let expiry = DateDayFraction::new(base_date + 10, 0.9);
+        let expiry = DateDayFraction::new(base_date + Days::new(10), 0.9);
 
         let v = FlatVolSurface::new(0.3, calendar, base);
         let var = v.variance(expiry, 10.0).unwrap();
@@ -1118,13 +1119,13 @@ pub mod tests {
         let d = base_date;
         let points = [
             (d, 90.0),
-            (d + 30, 90.1),
-            (d + 60, 90.2),
-            (d + 90, 90.1),
-            (d + 120, 90.0),
-            (d + 240, 89.9),
-            (d + 480, 89.8),
-            (d + 960, 89.8),
+            (d + Days::new(30), 90.1),
+            (d + Days::new(60), 90.2),
+            (d + Days::new(90), 90.1),
+            (d + Days::new(120), 90.0),
+            (d + Days::new(240), 89.9),
+            (d + Days::new(480), 89.8),
+            (d + Days::new(960), 89.8),
         ];
         let fwd = Linear::new(&points, Extrap::Natural, Extrap::Natural).unwrap();
 
@@ -1133,7 +1134,7 @@ pub mod tests {
         let mut smiles = Vec::<(DateDayFraction, CubicSplineSmile<f64>)>::new();
 
         let points = [(80.0, 0.39), (85.0, 0.3), (90.0, 0.22), (95.0, 0.24)];
-        let ttm = DateDayFraction::new(base_date + 7, 0.7);
+        let ttm = DateDayFraction::new(base_date + Days::new(7), 0.7);
         smiles.push((
             ttm,
             CubicSplineSmile::new(
@@ -1145,7 +1146,7 @@ pub mod tests {
         ));
 
         let points = [(70.0, 0.4), (80.0, 0.3), (90.0, 0.23), (100.0, 0.25)];
-        let ttm = DateDayFraction::new(base_date + 28, 0.7);
+        let ttm = DateDayFraction::new(base_date + Days::new(28), 0.7);
         smiles.push((
             ttm,
             CubicSplineSmile::new(
@@ -1157,7 +1158,7 @@ pub mod tests {
         ));
 
         let points = [(50.0, 0.43), (70.0, 0.32), (90.0, 0.24), (110.0, 0.27)];
-        let ttm = DateDayFraction::new(base_date + 112, 0.7);
+        let ttm = DateDayFraction::new(base_date + Days::new(112), 0.7);
         smiles.push((
             ttm,
             CubicSplineSmile::new(
@@ -1169,7 +1170,7 @@ pub mod tests {
         ));
 
         let points = [(10.0, 0.42), (50.0, 0.31), (90.0, 0.23), (150.0, 0.26)];
-        let ttm = DateDayFraction::new(base_date + 364, 0.7);
+        let ttm = DateDayFraction::new(base_date + Days::new(364), 0.7);
         smiles.push((
             ttm,
             CubicSplineSmile::new(
@@ -1201,7 +1202,7 @@ pub mod tests {
 
         // left extrapolation. The extreme strikes are very far from the money,
         // hence the extreme variances.
-        let expiry = DateDayFraction::new(base_date + 3, 0.9);
+        let expiry = DateDayFraction::new(base_date + Days::new(3), 0.9);
         v.variances(expiry, &strikes, &mut variances).unwrap();
         assert_vars(
             &variances,
@@ -1218,7 +1219,7 @@ pub mod tests {
         );
 
         // on the first pillar
-        let expiry = DateDayFraction::new(base_date + 7, 0.7);
+        let expiry = DateDayFraction::new(base_date + Days::new(7), 0.7);
         v.variances(expiry, &strikes, &mut variances).unwrap();
         assert_vars(
             &variances,
@@ -1235,7 +1236,7 @@ pub mod tests {
         );
 
         // mid way between the first two pillars -- testing interpolation
-        let expiry = DateDayFraction::new(base_date + 14, 0.7);
+        let expiry = DateDayFraction::new(base_date + Days::new(14), 0.7);
         v.variances(expiry, &strikes, &mut variances).unwrap();
         assert_vars(
             &variances,
@@ -1252,7 +1253,7 @@ pub mod tests {
         );
 
         // just before the second pillar. Should be close to the next results
-        let expiry = DateDayFraction::new(base_date + 28, 0.699);
+        let expiry = DateDayFraction::new(base_date + Days::new(28), 0.699);
         v.variances(expiry, &strikes, &mut variances).unwrap();
         assert_vars(
             &variances,
@@ -1269,7 +1270,7 @@ pub mod tests {
         );
 
         // on the second pillar. Close to the previous results.
-        let expiry = DateDayFraction::new(base_date + 28, 0.7);
+        let expiry = DateDayFraction::new(base_date + Days::new(28), 0.7);
         v.variances(expiry, &strikes, &mut variances).unwrap();
         assert_vars(
             &variances,
@@ -1286,7 +1287,7 @@ pub mod tests {
         );
 
         // just after the second pillar. Close to the previous results.
-        let expiry = DateDayFraction::new(base_date + 28, 0.701);
+        let expiry = DateDayFraction::new(base_date + Days::new(28), 0.701);
         v.variances(expiry, &strikes, &mut variances).unwrap();
         assert_vars(
             &variances,
@@ -1304,7 +1305,7 @@ pub mod tests {
 
         // on the fourth pillar, which is one year. These variances should be
         // roughly vol squared, which they are.
-        let expiry = DateDayFraction::new(base_date + 364, 0.7);
+        let expiry = DateDayFraction::new(base_date + Days::new(364), 0.7);
         v.variances(expiry, &strikes, &mut variances).unwrap();
         assert_vars(
             &variances,
@@ -1324,7 +1325,7 @@ pub mod tests {
         // twice the one year variances. They are slightly less at extreme
         // strikes because the normalised strike interpolation pulls the
         // adjusted strikes towards the forward.
-        let expiry = DateDayFraction::new(base_date + 728, 0.7);
+        let expiry = DateDayFraction::new(base_date + Days::new(728), 0.7);
         v.variances(expiry, &strikes, &mut variances).unwrap();
         assert_vars(
             &variances,
@@ -1358,7 +1359,7 @@ pub mod tests {
 
         // make sure the vols match at some expiry and some strikes
         let strikes = vec![45.0, 55.0, 65.0, 75.0, 85.0, 95.0, 105.0, 115.0];
-        let expiry = DateDayFraction::new(base_date + 14, 0.7);
+        let expiry = DateDayFraction::new(base_date + Days::new(14), 0.7);
         let mut variances = vec![0.0; strikes.len()];
         let mut serde_variances = vec![0.0; strikes.len()];
         surface.variances(expiry, &strikes, &mut variances).unwrap();
